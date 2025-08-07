@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz: localStorage, EventListeners e Cookies</title>
+    <!-- CSS do Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Estilos personalizados -->
+    <style>
+        body {
+            background-color: #f0f2f5;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+        .quiz-container {
+            max-width: 800px;
+            margin: 40px auto;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.1);
+            padding: 2rem;
+        }
+        .question-card {
+            margin-bottom: 1.5rem;
+            padding: 1.5rem;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+        }
+        .question-text {
+            font-size: 1.1rem;
+            font-weight: 500;
+            margin-bottom: 1rem;
+        }
+        .form-check-label {
+            cursor: pointer;
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px;
+            transition: background-color 0.2s ease;
+        }
+        .form-check-label.selected {
+            background-color: #e9ecef;
+            font-weight: 600;
+        }
+        .feedback {
+            margin-top: 1rem;
+            padding: 0.75rem 1.25rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            border-left-width: 5px;
+            border-left-style: solid;
+        }
+        .feedback.correct {
+            background-color: #d1e7dd;
+            color: #0f5132;
+            border-color: #198754;
+        }
+        .feedback.incorrect {
+            background-color: #f8d7da;
+            color: #842029;
+            border-color: #dc3545;
+        }
+        .feedback.unanswered {
+            background-color: #fff3cd;
+            color: #664d03;
+            border-color: #ffc107;
+        }
+        #submit-button {
+            font-weight: 600;
+        }
+        #result-summary {
+            display: none; /* Inicia escondido */
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            border-radius: 12px;
+            background-color: #e9ecef;
+            text-align: center;
+        }
+        .score-item {
+            font-size: 1.25rem;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container quiz-container">
+    <h1 class="text-center mb-4">Quiz de JavaScript</h1>
+    <p class="text-center text-muted mb-5">Teste seus conhecimentos sobre localStorage, EventListeners e Cookies.</p>
+
+    <div id="result-summary">
+        <h4>Relatório Final</h4>
+        <p>Você acertou <span id="correct-count" class="text-success score-item">0</span> de <span id="total-questions" class="score-item">0</span> perguntas.</p>
+        <p>Respostas corretas: <span id="correct-answers-count" class="text-success score-item">0</span></p>
+        <p>Respostas incorretas: <span id="incorrect-answers-count" class="text-danger score-item">0</span></p>
+        <p>Não respondidas: <span id="unanswered-count" class="text-warning score-item">0</span></p>
+    </div>
+
+    <div id="quiz-questions">
+        <!-- As perguntas serão injetadas aqui pelo JavaScript -->
+    </div>
+    <div class="d-grid">
+        <button id="submit-button" class="btn btn-primary btn-lg mt-3">Verificar Todas as Respostas</button>
+    </div>
+</div>
+
+<script>
+    // Array com todas as perguntas do quiz
+    const questions = [
+        // Seção: localStorage
+        {
+            section: "localStorage",
+            question: "Qual é a principal característica do `localStorage`?",
+            options: [
+                "Os dados expiram quando o navegador é fechado.",
+                "Os dados são enviados automaticamente para o servidor a cada requisição.",
+                "Os dados persistem no navegador sem data de expiração.",
+                "Permite armazenar apenas números."
+            ],
+            correctAnswer: 2,
+            feedback: "Correto! O `localStorage` foi projetado para armazenar dados de forma persistente no navegador do cliente, sem um tempo de expiração definido."
+        },
+        {
+            section: "localStorage",
+            question: "Como você armazena o valor '123' com a chave 'userId' no `localStorage`?",
+            options: [
+                "`localStorage.add('userId', '123');`",
+                "`localStorage.saveItem('userId', '123');`",
+                "`localStorage.setItem('userId', '123');`",
+                "`localStorage('userId', '123');`"
+            ],
+            correctAnswer: 2,
+            feedback: "Exato! O método `setItem(key, value)` é usado para adicionar ou atualizar um par chave-valor no `localStorage`."
+        },
+        {
+            section: "localStorage",
+            question: "Qual o tipo de dado que o `localStorage` armazena?",
+            options: ["Strings", "Objetos JSON", "Arrays", "Números"],
+            correctAnswer: 0,
+            feedback: "Isso mesmo. O `localStorage` armazena todos os dados como strings. Para armazenar objetos ou arrays, você precisa convertê-los para uma string JSON usando `JSON.stringify()`."
+        },
+        {
+            section: "localStorage",
+            question: "Como você recupera um valor do `localStorage`?",
+            options: [
+                "`localStorage.getItem('minhaChave')`",
+                "`localStorage.retrieve('minhaChave')`",
+                "`localStorage.fetch('minhaChave')`",
+                "`localStorage.get('minhaChave')`"
+            ],
+            correctAnswer: 0,
+            feedback: "Perfeito! `getItem(key)` é o método correto para ler o valor associado a uma chave específica."
+        },
+        {
+            section: "localStorage",
+            question: "Para remover um item específico do `localStorage`, qual método você usa?",
+            options: [
+                "`localStorage.deleteItem('chave')`",
+                "`localStorage.removeItem('chave')`",
+                "`localStorage.clearItem('chave')`",
+                "`localStorage.erase('chave')`"
+            ],
+            correctAnswer: 1,
+            feedback: "Correto. O método `removeItem(key)` é usado para excluir um item específico, identificado pela sua chave."
+        },
+        {
+            section: "localStorage",
+            question: "Qual método remove todos os dados do `localStorage` para o domínio atual?",
+            options: ["`localStorage.deleteAll()`", "`localStorage.reset()`", "`localStorage.empty()`", "`localStorage.clear()`"],
+            correctAnswer: 3,
+            feedback: "Exato. `localStorage.clear()` remove todos os pares chave-valor armazenados, limpando completamente o armazenamento para aquele domínio."
+        },
+        {
+            section: "localStorage",
+            question: "Qual é a principal diferença entre `localStorage` e `sessionStorage`?",
+            options: [
+                "`localStorage` é mais rápido.",
+                "`sessionStorage` tem um limite de armazenamento maior.",
+                "Dados do `localStorage` persistem, enquanto os do `sessionStorage` são apagados ao fechar a aba/navegador.",
+                "`sessionStorage` só funciona com strings."
+            ],
+            correctAnswer: 2,
+            feedback: "Perfeito! A distinção fundamental é a persistência: `localStorage` dura para sempre (ou até ser limpo), enquanto `sessionStorage` dura apenas pela sessão de navegação."
+        },
+        {
+            section: "localStorage",
+            question: "O que acontece se você tentar salvar um objeto JavaScript diretamente no `localStorage`?",
+            options: [
+                "O objeto é salvo corretamente.",
+                "Gera um erro no console.",
+                "O objeto é convertido e salvo como a string `[object Object]`.",
+                "O navegador o converte para XML."
+            ],
+            correctAnswer: 2,
+            feedback: "Isso mesmo. Como o `localStorage` só aceita strings, ele chama o método `toString()` do objeto, resultando na string `[object Object]`, o que torna os dados inúteis."
+        },
+        {
+            section: "localStorage",
+            question: "Para ler um objeto que foi salvo como string JSON do `localStorage`, o que você deve fazer?",
+            options: [
+                "Usar `JSON.parse()` na string recuperada.",
+                "Usar `eval()` na string.",
+                "Acessar as propriedades diretamente da string.",
+                "Converter a string para um array primeiro."
+            ],
+            correctAnswer: 0,
+            feedback: "Correto! Após recuperar a string com `getItem()`, você deve usar `JSON.parse()` para desserializá-la de volta para um objeto JavaScript utilizável."
+        },
+        {
+            section: "localStorage",
+            question: "O `localStorage` é acessível entre diferentes abas e janelas do mesmo navegador e domínio?",
+            options: ["Não, é restrito a uma única aba.", "Sim, os dados são compartilhados.", "Apenas se forem abertos a partir do mesmo link.", "Apenas no modo de navegação anônima."],
+            correctAnswer: 1,
+            feedback: "Exato! O `localStorage` é vinculado à origem (domínio), então qualquer aba ou janela aberta para esse mesmo domínio compartilhará os mesmos dados."
+        },
+
+        // Seção: EventListeners
+        {
+            section: "EventListeners",
+            question: "Qual método é usado para anexar um 'ouvinte de evento' a um elemento HTML?",
+            options: [
+                "`element.attachEvent('click', myFunction)`",
+                "`element.listen('click', myFunction)`",
+                "`element.addEventListener('click', myFunction)`",
+                "`element.on('click', myFunction)`"
+            ],
+            correctAnswer: 2,
+            feedback: "Perfeito! `addEventListener` é o método padrão e moderno para registrar um callback que será executado quando um evento específico ocorrer no elemento."
+        },
+        {
+            section: "EventListeners",
+            question: "No código `btn.addEventListener('click', function() { ... })`, o que 'click' representa?",
+            options: ["O nome da função.", "Uma variável.", "O tipo do evento a ser ouvido.", "Um seletor CSS."],
+            correctAnswer: 2,
+            feedback: "Correto. O primeiro argumento de `addEventListener` é uma string que especifica o nome do evento a ser monitorado, como 'click', 'mouseover', 'keydown', etc."
+        },
+        {
+            section: "EventListeners",
+            question: "Como você remove um `eventListener` que foi adicionado com uma função nomeada `handleClick`?",
+            options: [
+                "`element.removeEventListener('click', handleClick)`",
+                "`element.stopListening('click', handleClick)`",
+                "`element.detachEvent('click', handleClick)`",
+                "`element.removeListener('click')`"
+            ],
+            correctAnswer: 0,
+            feedback: "Isso mesmo. Para remover um ouvinte, você deve usar `removeEventListener` e passar exatamente os mesmos argumentos (tipo de evento e função de callback) que usou para adicioná-lo."
+        },
+        {
+            section: "EventListeners",
+            question: "O que o método `event.preventDefault()` faz?",
+            options: [
+                "Interrompe a execução de todo o script.",
+                "Impede que o evento se propague para elementos pai (bubbling).",
+                "Cancela a ação padrão do navegador para aquele evento.",
+                "Remove o elemento do DOM."
+            ],
+            correctAnswer: 2,
+            feedback: "Exato! `preventDefault()` é usado para impedir o comportamento padrão, como um link de navegar para outra página ou um formulário de ser enviado."
+        },
+        {
+            section: "EventListeners",
+            question: "O que é 'event bubbling' (borbulhamento de evento)?",
+            options: [
+                "Um erro que faz o navegador travar.",
+                "O processo onde um evento se propaga dos elementos filhos para os pais.",
+                "A criação de múltiplos eventos de uma só vez.",
+                "Um evento que só pode ser capturado no elemento `window`."
+            ],
+            correctAnswer: 1,
+            feedback: "Correto! Bubbling é o comportamento padrão onde um evento acionado em um elemento 'borbulha' para cima na árvore DOM, acionando ouvintes nos seus ancestrais."
+        },
+        {
+            section: "EventListeners",
+            question: "Qual método para a propagação de um evento (bubbling ou capturing)?",
+            options: ["`event.stop()`", "`event.halt()`", "`event.preventDefault()`", "`event.stopPropagation()`"],
+            correctAnswer: 3,
+            feedback: "Perfeito. `event.stopPropagation()` impede que o evento continue sua propagação na árvore DOM, seja para cima (bubbling) ou para baixo (capturing)."
+        },
+        {
+            section: "EventListeners",
+            question: "Qual evento é acionado quando um usuário pressiona uma tecla no teclado?",
+            options: ["`keypress`", "`keyup`", "`keydown`", "Todos os anteriores são válidos."],
+            correctAnswer: 3,
+            feedback: "Isso mesmo! `keydown` dispara quando a tecla é pressionada, `keypress` (embora obsoleto) dispara para teclas que produzem caracteres, e `keyup` dispara quando a tecla é solta."
+        },
+        {
+            section: "EventListeners",
+            question: "Dentro de um `eventListener`, a que a palavra-chave `this` geralmente se refere?",
+            options: [
+                "Ao objeto `window`.",
+                "Ao elemento ao qual o ouvinte foi anexado.",
+                "Ao objeto `event`.",
+                "É sempre `undefined`."
+            ],
+            correctAnswer: 1,
+            feedback: "Correto! Em uma função de callback tradicional (não uma arrow function), `this` é vinculado ao elemento que acionou o evento."
+        },
+        {
+            section: "EventListeners",
+            question: "Qual a principal vantagem de `addEventListener` sobre a propriedade `onclick`?",
+            options: [
+                "`addEventListener` é mais antigo e compatível.",
+                "`onclick` é mais rápido.",
+                "`addEventListener` permite anexar múltiplos ouvintes para o mesmo evento em um elemento.",
+                "`onclick` permite mais tipos de eventos."
+            ],
+            correctAnswer: 2,
+            feedback: "Exato! Com `addEventListener`, você pode ter várias funções respondendo ao mesmo evento (ex: múltiplos 'click' listeners), enquanto `onclick` só permite uma."
+        },
+        {
+            section: "EventListeners",
+            question: "O que é 'delegação de eventos' (event delegation)?",
+            options: [
+                "Anexar um ouvinte a cada elemento filho individualmente.",
+                "Anexar um único ouvinte a um elemento pai para gerenciar eventos de seus filhos.",
+                "Remover todos os ouvintes de uma vez.",
+                "Um padrão de projeto para criar eventos personalizados."
+            ],
+            correctAnswer: 1,
+            feedback: "Perfeito! A delegação de eventos é uma técnica de otimização onde você coloca um listener em um elemento pai para lidar com eventos que borbulham de seus descendentes."
+        },
+
+        // Seção: Cookies
+        {
+            section: "Cookies",
+            question: "Qual é a principal função dos cookies na web?",
+            options: [
+                "Armazenar grandes arquivos no cliente.",
+                "Manter o estado entre requisições HTTP, como sessões de login.",
+                "Executar código JavaScript no lado do servidor.",
+                "Acelerar o carregamento de imagens."
+            ],
+            correctAnswer: 1,
+            feedback: "Correto. Como o HTTP é 'stateless' (não guarda estado), os cookies são usados para lembrar informações sobre o usuário entre diferentes visitas à página."
+        },
+        {
+            section: "Cookies",
+            question: "Como se define um cookie simples em JavaScript?",
+            options: [
+                "`document.cookie = 'nome=valor';`",
+                "`document.createCookie('nome', 'valor');`",
+                "`window.cookie = 'nome=valor';`",
+                "`cookie.set('nome=valor');`"
+            ],
+            correctAnswer: 0,
+            feedback: "Isso mesmo. A forma de criar ou atualizar um cookie é atribuindo uma string no formato 'chave=valor' à propriedade `document.cookie`."
+        },
+        {
+            section: "Cookies",
+            question: "Qual atributo de um cookie o torna inacessível para o JavaScript, aumentando a segurança?",
+            options: ["`Secure`", "`SameSite`", "`Path`", "`HttpOnly`"],
+            correctAnswer: 3,
+            feedback: "Exato! A flag `HttpOnly` instrui o navegador a não permitir que o cookie seja acessado via JavaScript, ajudando a mitigar ataques de XSS (Cross-Site Scripting)."
+        },
+        {
+            section: "Cookies",
+            question: "Qual é a principal desvantagem dos cookies em comparação com `localStorage`?",
+            options: [
+                "Eles não podem ter data de expiração.",
+                "Eles são enviados em cada requisição HTTP para o servidor, consumindo banda.",
+                "Eles têm um limite de armazenamento muito menor.",
+                "São mais difíceis de ler com JavaScript."
+            ],
+            correctAnswer: 1,
+            feedback: "Perfeito. Como os cookies são enviados no cabeçalho de cada requisição HTTP, eles podem impactar negativamente a performance, especialmente em conexões lentas."
+        },
+        {
+            section: "Cookies",
+            question: "Como você remove um cookie usando JavaScript?",
+            options: [
+                "Usando `document.cookie.remove('nome')`.",
+                "Atribuindo um valor vazio: `document.cookie = 'nome='`.",
+                "Definindo sua data de expiração para uma data no passado.",
+                "Não é possível remover cookies com JavaScript."
+            ],
+            correctAnswer: 2,
+            feedback: "Correto. A técnica para excluir um cookie é redefini-lo com o mesmo nome e caminho, mas com um atributo `expires` contendo uma data que já passou."
+        },
+        {
+            section: "Cookies",
+            question: "O atributo `Secure` em um cookie garante que:",
+            options: [
+                "O cookie seja criptografado.",
+                "O cookie só possa ser lido pelo servidor.",
+                "O cookie só seja enviado em requisições HTTPS.",
+                "O cookie nunca expire."
+            ],
+            correctAnswer: 2,
+            feedback: "Isso mesmo. A flag `Secure` é uma medida de segurança que garante que o cookie só será transmitido através de uma conexão segura (HTTPS)."
+        },
+        {
+            section: "Cookies",
+            question: "Qual o tamanho máximo aproximado de um cookie?",
+            options: ["1 KB", "4 KB", "1 MB", "5 MB"],
+            correctAnswer: 1,
+            feedback: "Exato. O limite de tamanho para um único cookie é de aproximadamente 4 KB, o que o torna inadequado para armazenar grandes volumes de dados."
+        },
+        {
+            section: "Cookies",
+            question: "O que o atributo `path` de um cookie especifica?",
+            options: [
+                "O domínio para o qual o cookie é válido.",
+                "O caminho do URL no servidor para o qual o cookie será enviado.",
+                "O caminho do arquivo no cliente onde o cookie é salvo.",
+                "A prioridade do cookie."
+            ],
+            correctAnswer: 1,
+            feedback: "Correto. O atributo `path` restringe o envio do cookie a um diretório específico no servidor. Por exemplo, `path=/app` fará com que o cookie seja enviado apenas para URLs dentro de `/app`."
+        },
+        {
+            section: "Cookies",
+            question: "Ler `document.cookie` retorna:",
+            options: [
+                "Um objeto com todos os cookies.",
+                "Um array de cookies.",
+                "Uma única string contendo todos os cookies para aquele domínio, separados por ponto e vírgula.",
+                "O cookie mais recente."
+            ],
+            correctAnswer: 2,
+            feedback: "Perfeito. `document.cookie` retorna uma única string como 'cookie1=valor1; cookie2=valor2', exigindo que você a processe para extrair os valores individuais."
+        },
+        {
+            section: "Cookies",
+            question: "Para qual finalidade o `localStorage` é geralmente uma escolha melhor que os cookies?",
+            options: [
+                "Armazenar tokens de autenticação de forma segura.",
+                "Manter o estado de uma sessão de login.",
+                "Armazenar dados que só o servidor precisa ler.",
+                "Armazenar preferências do usuário ou dados de aplicação que não precisam ser enviados ao servidor."
+            ],
+            correctAnswer: 3,
+            feedback: "Exato! Para dados puramente do lado do cliente, como preferências de tema (escuro/claro) ou o estado de um rascunho, o `localStorage` é ideal por ter mais espaço e não sobrecarregar as requisições."
+        }
+    ];
+
+    // Elementos do DOM
+    const quizContainer = document.getElementById('quiz-questions');
+    const submitButton = document.getElementById('submit-button');
+    const resultSummary = document.getElementById('result-summary');
+
+    /**
+     * Renderiza todas as perguntas do quiz na página.
+     */
+    function renderQuestions() {
+        const questionHTML = questions.map((q, index) => {
+            const optionsHTML = q.options.map((option, i) => `
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="question-${index}" id="q${index}-option${i}" value="${i}">
+                    <label class="form-check-label" for="q${index}-option${i}">
+                        ${option}
+                    </label>
+                </div>
+            `).join('');
+
+            return `
+                <div class="question-card" id="card-${index}">
+                    <p class="question-text">${index + 1}. ${q.question}</p>
+                    <div id="form-${index}">
+                        ${optionsHTML}
+                    </div>
+                    <div id="feedback-${index}" class="feedback" style="display: none;"></div>
+                </div>
+            `;
+        }).join('');
+
+        quizContainer.innerHTML = questionHTML;
+        document.getElementById('total-questions').textContent = questions.length;
+    }
+
+    /**
+     * Exibe o feedback para uma única pergunta após a submissão.
+     * @param {number} index - O índice da pergunta no array.
+     * @param {number | null} selectedValue - O valor da opção selecionada, ou null se não houver.
+     */
+    function showFeedback(index, selectedValue) {
+        const question = questions[index];
+        const feedbackDiv = document.getElementById(`feedback-${index}`);
+        const form = document.getElementById(`form-${index}`);
+
+        feedbackDiv.style.display = 'block';
+
+        if (selectedValue === null) {
+            feedbackDiv.innerHTML = "<strong>Não respondida:</strong> Por favor, selecione uma opção para ver o feedback.";
+            feedbackDiv.className = 'feedback unanswered';
+        } else {
+            const isCorrect = selectedValue === question.correctAnswer;
+            const correctLabel = form.querySelector(`label[for="q${index}-option${question.correctAnswer}"]`);
+            const selectedLabel = form.querySelector(`label[for="q${index}-option${selectedValue}"]`);
+
+            if (isCorrect) {
+                feedbackDiv.innerHTML = `<strong>Resposta correta:</strong> ${question.feedback}`;
+                feedbackDiv.className = 'feedback correct';
+                correctLabel.classList.add('bg-success', 'text-white');
+            } else {
+                feedbackDiv.innerHTML = `<strong>Resposta incorreta:</strong> ${question.feedback}`;
+                feedbackDiv.className = 'feedback incorrect';
+                if(selectedLabel) selectedLabel.classList.add('bg-danger', 'text-white');
+                if(correctLabel) correctLabel.classList.add('bg-success', 'text-white');
+            }
+        }
+    }
+
+    /**
+     * Verifica todas as respostas, exibe o relatório final e o feedback de cada pergunta.
+     */
+    function checkAllAnswers() {
+        let correctCount = 0;
+        let incorrectCount = 0;
+        let unansweredCount = 0;
+
+        questions.forEach((_, index) => {
+            const form = document.getElementById(`form-${index}`);
+            const selectedOptionInput = form.querySelector(`input[name="question-${index}"]:checked`);
+            const selectedValue = selectedOptionInput ? parseInt(selectedOptionInput.value) : null;
+
+            if (selectedValue === null) {
+                unansweredCount++;
+            } else if (selectedValue === questions[index].correctAnswer) {
+                correctCount++;
+            } else {
+                incorrectCount++;
+            }
+            
+            // Desabilita todas as opções para evitar alterações
+            form.querySelectorAll('input[type="radio"]').forEach(input => input.disabled = true);
+
+            // Exibe o feedback para cada pergunta
+            showFeedback(index, selectedValue);
+        });
+
+        // Atualiza e exibe o resumo dos resultados
+        document.getElementById('correct-answers-count').textContent = correctCount;
+        document.getElementById('incorrect-answers-count').textContent = incorrectCount;
+        document.getElementById('unanswered-count').textContent = unansweredCount;
+        document.getElementById('correct-count').textContent = correctCount;
+        resultSummary.style.display = 'block';
+        submitButton.disabled = true; // Desabilita o botão de submissão
+    }
+
+    // Event listener para o botão de verificação final
+    submitButton.addEventListener('click', checkAllAnswers);
+
+    // Inicializa o quiz ao carregar a página
+    document.addEventListener('DOMContentLoaded', renderQuestions);
+</script>
+
+</body>
+</html>
